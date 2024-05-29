@@ -16,13 +16,13 @@ public class WordGuessingGame extends JFrame {
         } else {
             JOptionPane.showMessageDialog(this,
                     "Error reading the CSV file. Please check the " +
-                            " file and try again.");
+                            "file and try again.");
             System.exit(1);
         }
     }
 
     private boolean readCSV() {
-        File file = new File("src/questions.txt");
+        File file = new File("src/questions.csv");
 
         if (!file.exists() || file.isDirectory()) {
             return false;
@@ -30,69 +30,68 @@ public class WordGuessingGame extends JFrame {
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
-
             while ((line = br.readLine()) != null) {
                 String[] data = line.split(",");
                 if (data.length == 5) {
                     questionData.add(data);
                 } else {
-                    System.err.println("Skipping invalid line "  + line);
+                    System.err.println("Skipping invalid line: " + line);
                 }
             }
-
             return true;
         } catch (IOException e) {
-            e.getStackTrace();
+            e.printStackTrace();
             return false;
         }
     }
 
     private void initializeUI() {
         setTitle("Word Guessing Game");
-        setSize(400, 200);
+        setSize(500, 300);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new FlowLayout());
+        setLayout(new BorderLayout());
 
-        questionLabel = new JLabel("Question: " + questionData
-                .get(currentQuestionIndex)[0], SwingConstants.CENTER);
-        add(questionLabel);
+        JPanel topPanel = new JPanel(new GridLayout(3, 1));
+        questionLabel = new JLabel("Question: " + questionData.get(currentQuestionIndex)[0], SwingConstants.CENTER);
+        topPanel.add(questionLabel);
 
         answerField = new JTextField(20);
-        add(answerField);
+        topPanel.add(answerField);
 
+        JPanel buttonPanel = new JPanel();
         JButton submitButton = new JButton("Submit");
         submitButton.addActionListener(actionEvent -> checkAnswer());
-        add(submitButton);
-
-        JLabel hl = new JLabel("          Get Clue: ", SwingConstants.CENTER);
-        add(hl);
+        buttonPanel.add(submitButton);
 
         JButton clueButton = new JButton("Clue");
         clueButton.addActionListener(actionEvent -> provideClue());
-        add(clueButton);
+        buttonPanel.add(clueButton);
+
+        topPanel.add(buttonPanel);
+        add(topPanel, BorderLayout.NORTH);
 
         cluesArea = new JTextArea(5, 30);
         cluesArea.setEditable(false);
-        add(cluesArea);
+        JScrollPane scrollPane = new JScrollPane(cluesArea);
+        add(scrollPane, BorderLayout.CENTER);
 
-        JLabel hl3 = new JLabel("-----------------", SwingConstants.CENTER);
-        add(hl3);
-
+        JPanel statusPanel = new JPanel(new GridLayout(1, 2));
         scoreLabel = new JLabel("Score: " + score);
-        add(scoreLabel);
+        statusPanel.add(scoreLabel);
 
-        attemptsLabel = new JLabel("Attempts: "+ attempts);
-        add(attemptsLabel);
+        attemptsLabel = new JLabel("Attempts: " + attempts);
+        statusPanel.add(attemptsLabel);
+
+        add(statusPanel, BorderLayout.SOUTH);
 
         setVisible(true);
     }
 
     private void provideClue() {
-
-        if (clueIndex < 3  && score > 1) {
+        if (clueIndex < 3 && score > 1) {
             String[] clues = Arrays.copyOfRange(questionData.get(currentQuestionIndex), 2, 5);
             String clueToShow = clues[clueIndex];
-            cluesArea.append(clueToShow + "\n");
+            cluesArea.append("Clue " + (clueIndex + 1) + ": " + clueToShow + "\n");
             clueIndex++;
             score--;
             scoreLabel.setText("Score: " + score);
@@ -105,47 +104,34 @@ public class WordGuessingGame extends JFrame {
 
     private void checkAnswer() {
         if (questionData.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "No question available. ");
+            JOptionPane.showMessageDialog(this, "No question available.");
             return;
         }
 
         String answer = answerField.getText().trim();
         if (answer.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Please enter a guess. ");
+            JOptionPane.showMessageDialog(this, "Please enter a guess.");
             return;
         }
 
         String correctAnswer = questionData.get(currentQuestionIndex)[1];
         if (answer.equalsIgnoreCase(correctAnswer)) {
-            JOptionPane.showMessageDialog(this,
-                    "Correct! Your score: " + score);
+            JOptionPane.showMessageDialog(this, "Correct! Your score: " + score);
             resetGame();
         } else {
             attempts++;
             attemptsLabel.setText("Attempts: " + attempts);
-
             if (attempts >= 10) {
-                JOptionPane.showMessageDialog(this,
-                        "Out of attempts! The correct word was: "
-                + correctAnswer);
+                JOptionPane.showMessageDialog(this, "Out of attempts! The correct word was: " + correctAnswer);
                 resetGame();
             } else {
-                JOptionPane.showMessageDialog(this,  "Wrong answer. Try again!");
+                JOptionPane.showMessageDialog(this, "Wrong answer. Try again!");
             }
         }
     }
 
     private void resetGame() {
-        if (questionData.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "No more question available. ");
-            return;
-        }
-
-        currentQuestionIndex = (currentQuestionIndex+1) %
-                questionData.size();
+        currentQuestionIndex = (currentQuestionIndex + 1) % questionData.size();
         questionLabel.setText("Question: " + questionData.get(currentQuestionIndex)[0]);
         score = 5;
         scoreLabel.setText("Score: " + score);
